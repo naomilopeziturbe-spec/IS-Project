@@ -1,0 +1,108 @@
+body{
+    background-color: rgb(150, 210, 230);
+    font-family: 'Times New Roman', Times, serif;
+    color: black; 
+}
+
+.header{
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    height: 500px;
+    z-index: 2;
+    border-bottom: solid 2px rgb(246, 246, 206);
+    position: relative;   
+}
+
+.mainbody{
+    top: 20px;
+    margin: 20px auto;            
+    max-width: 1000px;
+    border-left: solid 1px #4d4c4c;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+
+.footer{
+    bottom: 5px;
+    left: 0;
+    right: 0;
+    height: 25px;
+    font-size: 10px;
+    color: #ffffff;                
+    background-color: #003366;
+    text-align: center;
+    padding-top: 15px;
+    position: fixed;               
+}
+
+.box1 {
+    border-style: solid;
+    border-color: rgb(75, 48, 48);
+    border-width: 5px;
+}
+
+.profileBox{
+    width: 95%;
+    padding: 10px;
+    border: 3px solid rgb(17, 119, 207);
+    background-color: rgb(11, 108, 153);
+    border-radius: 30px;
+    text-align: center;
+    margin: 1%;
+    margin-bottom: 0%;
+    color: white;                  
+}
+
+.italic{
+    font-style: italic;
+    color: #1262ec;                
+}
+
+.roundImg{
+    border-radius: 20%;
+}
+
+.img{
+    overflow-clip-margin: content-box;
+    overflow: clip;
+}
+
+.rightmenu{
+    position: fixed;
+    top: 150px;
+    right: 150px;
+    width: 150px;
+    border: solid 1px #302e2e;
+    padding: 5px;
+    background-color: rgb(178, 201, 224);
+}
+
+.ht{
+    text-align: center;
+}
+
+p{
+    font-size: 20px;
+    font-family: 'Times New Roman', Times, serif;
+    color: black;
+}
+
+ol{
+    font-size: 25px;
+    color: black;
+    font-family: 'Times New Roman', Times, serif;
+}
+
+
+a{
+    color: rgb(255, 255, 255);               
+    font-family: Arial, Helvetica, sans-serif; 
+    font-size: 20px;
+}
+
+a:hover{
+    font-size: 20px;
+    color: rgb(255, 255, 255);
+}

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Neon Pattern Snake</title>
+  <style>
+    :root {
+      --bg1: #0b0547;
+      --bg2: #3b1c77;
+      --bg3: #ff3ea5;
+      --food: #ff79c6;
+      --grid: rgba(255, 255, 255, 0.05);
+      --text: #f8f0ff;
+    }
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, var(--bg3), transparent 60%),
+                  radial-gradient(circle at bottom, var(--bg2), var(--bg1));
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    #score {
+      margin-bottom: 12px;
+      font-size: 22px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+    }
+
+    canvas {
+      background: linear-gradient(135deg, rgba(13, 2, 33, 0.95), rgba(8, 12, 46, 0.95));
+      border-radius: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      box-shadow:
+        0 0 25px rgba(92, 225, 230, 0.3),
+        0 0 55px rgba(255, 121, 198, 0.25);
+    }
+  </style>
+</head>
+<body>
+  <div id="score">Score: 0</div>
+  <canvas id="game" width="400" height="400"></canvas>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const scoreEl = document.getElementById("score");
+
+    const tileSize = 20;
+    const tileCount = canvas.width / tileSize;
+
+    let snake = [{ x: 10, y: 10 }];
+    let vx = 1;
+    let vy = 0;
+    let food = { x: 5, y: 5 };
+    let score = 0;
+    let gameOver = false;
+
+    // Neon rainbow colors
+    const rainbowColors = [
+      "#ff2f8e", // neon pink-red
+      "#ff9e4c", // neon orange
+      "#ffd600", // neon yellow
+      "#66df48", // neon green
+      "#1f51ff", // neon blue
+      "#6a77dd", // indigo
+      "#bc13fe"  // violet
+    ];
+    let currentColorIndex = 0;
+
+    // Visual pattern modes: 0 = solid, 1 = polka dots, 2 = stripes, 3 = squiggles
+    let currentPatternIndex = 0;
+
+    function gameLoop() {
+      if (gameOver) return;
+      update();
+      draw();
+      setTimeout(gameLoop, 100);
+    }
+
+    function update() {
+      const head = { x: snake[0].x + vx, y: snake[0].y + vy };
+
+      // Wrap around edges
+      if (head.x < 0) head.x = tileCount - 1;
+      if (head.x >= tileCount) head.x = 0;
+      if (head.y < 0) head.y = tileCount - 1;
+      if (head.y >= tileCount) head.y = 0;
+
+      // Self collision
+      for (let part of snake) {
+        if (part.x === head.x && part.y === head.y) {
+          gameOver = true;
+          alert("Game Over! Final score: " + score);
+          return;
+        }
+      }
+
+      snake.unshift(head);
+
+      // Eating food
+      if (head.x === food.x && head.y === food.y) {
+        score++;
+        scoreEl.textContent = "Score: " + score;
+        placeFood();
+
+        // Cycle color and pattern
+        currentColorIndex = (currentColorIndex + 1) % rainbowColors.length;
+        currentPatternIndex = (currentPatternIndex + 1) % 4;
+      } else {
+        snake.pop();
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Grid
+      ctx.strokeStyle = getComputedStyle(document.documentElement)
+        .getPropertyValue("--grid");
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= tileCount; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * tileSize, 0);
+        ctx.lineTo(i * tileSize, canvas.height);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, i * tileSize);
+        ctx.lineTo(canvas.width, i * tileSize);
+        ctx.stroke();
+      }
+
+      const snakeColor = rainbowColors[currentColorIndex];
+
+      // Snake
+      snake.forEach((part, index) => {
+        const size = tileSize - 3;
+        const px = part.x * tileSize + 1.5;
+        const py = part.y * tileSize + 1.5;
+
+        // Base body
+        ctx.fillStyle = snakeColor;
+        ctx.fillRect(px, py, size, size);
+
+        // Pattern overlay
+        drawPattern(px, py, size, size, snakeColor, currentPatternIndex);
+
+        // Head glow + eyes
+        if (index === 0) {
+          ctx.save();
+          ctx.shadowColor = snakeColor;
+          ctx.shadowBlur = 18;
+          ctx.fillStyle = snakeColor;
+          ctx.fillRect(px, py, size, size);
+          ctx.restore();
+
+          drawPattern(px, py, size, size, snakeColor, currentPatternIndex);
+          drawEyes(part);
+        }
+      });
+
+      // Food
+      ctx.fillStyle = getComputedStyle(document.documentElement)
+        .getPropertyValue("--food");
+      const size = tileSize - 4;
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(
+          food.x * tileSize + 2,
+          food.y * tileSize + 2,
+          size,
+          size,
+          6
+        );
+      } else {
+        ctx.rect(food.x * tileSize + 2, food.y * tileSize + 2, size, size);
+      }
+      ctx.fill();
+    }
+
+    function drawPattern(x, y, w, h, baseColor, patternIndex) {
+      switch (patternIndex) {
+        case 1: // polka dots
+          drawPolkaDots(x, y, w, h);
+          break;
+        case 2: // stripes
+          drawStripes(x, y, w, h, baseColor);
+          break;
+        case 3: // squiggles
+          drawSquiggles(x, y, w, h, baseColor);
+          break;
+        default: // solid (no extra pattern)
+          break;
+      }
+    }
+
+    function drawPolkaDots(x, y, w, h) {
+      ctx.save();
+      ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+      const r = 2;
+      const spacing = 6;
+      for (let dx = x + spacing / 2; dx < x + w; dx += spacing) {
+        for (let dy = y + spacing / 2; dy < y + h; dy += spacing) {
+          ctx.beginPath();
+          ctx.arc(dx, dy, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawStripes(x, y, w, h, baseColor) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+      ctx.lineWidth = 2;
+      const step = 5;
+      for (let i = -h; i < w + h; i += step) {
+        ctx.beginPath();
+        ctx.moveTo(x + i, y);
+        ctx.lineTo(x + i + h, y + h);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawSquiggles(x, y, w, h, baseColor) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+      ctx.lineWidth = 1.5;
+      const amplitude = 2.5;
+      const frequency = 4;
+      ctx.beginPath();
+      for (let dx = 0; dx <= w; dx += 2) {
+        const sx = x + dx;
+        const sy = y + h / 2 + Math.sin((dx / w) * Math.PI * frequency) * amplitude;
+        if (dx === 0) ctx.moveTo(sx, sy);
+        else ctx.lineTo(sx, sy);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawEyes(head) {
+      const eyeSize = 4;
+      const offsetX = 4;
+      const offsetY = 4;
+
+      let leftEyeX, leftEyeY, rightEyeX, rightEyeY;
+
+      if (vx === 1 && vy === 0) { // right
+        leftEyeX  = head.x * tileSize + tileSize - offsetX - eyeSize;
+        leftEyeY  = head.y * tileSize + offsetY;
+        rightEyeX = leftEyeX;
+        rightEyeY = head.y * tileSize + tileSize - offsetY - eyeSize;
+      } else if (vx === -1 && vy === 0) { // left
+        leftEyeX  = head.x * tileSize + offsetX;
+        leftEyeY  = head.y * tileSize + offsetY;
+        rightEyeX = leftEyeX;
+        rightEyeY = head.y * tileSize + tileSize - offsetY - eyeSize;
+      } else if (vy === -1 && vx === 0) { // up
+        leftEyeX  = head.x * tileSize + offsetX;
+        leftEyeY  = head.y * tileSize + offsetY;
+        rightEyeX = head.x * tileSize + tileSize - offsetX - eyeSize;
+        rightEyeY = leftEyeY;
+      } else { // down
+        leftEyeX  = head.x * tileSize + offsetX;
+        leftEyeY  = head.y * tileSize + tileSize - offsetY - eyeSize;
+        rightEyeX = head.x * tileSize + tileSize - offsetX - eyeSize;
+        rightEyeY = leftEyeY;
+      }
+
+      // Whites
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(leftEyeX, leftEyeY, eyeSize, eyeSize);
+      ctx.fillRect(rightEyeX, rightEyeY, eyeSize, eyeSize);
+
+      // Pupils
+      const pupilSize = 2;
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(leftEyeX + 1, leftEyeY + 1, pupilSize, pupilSize);
+      ctx.fillRect(rightEyeX + 1, rightEyeY + 1, pupilSize, pupilSize);
+    }
+
+    function placeFood() {
+      food.x = Math.floor(Math.random() * tileCount);
+      food.y = Math.floor(Math.random() * tileCount);
+
+      for (let part of snake) {
+        if (part.x === food.x && part.y === food.y) {
+          return placeFood();
+        }
+      }
+    }
+
+    window.addEventListener("keydown", (e) => {
+      switch (e.key) {
+        case "ArrowUp":
+          if (vy === 1) break;
+          vx = 0; vy = -1;
+          break;
+        case "ArrowDown":
+          if (vy === -1) break;
+          vx = 0; vy = 1;
+          break;
+        case "ArrowLeft":
+          if (vx === 1) break;
+          vx = -1; vy = 0;
+          break;
+        case "ArrowRight":
+          if (vx === -1) break;
+          vx = 1; vy = 0;
+          break;
+      }
+    });
+
+    placeFood();
+    gameLoop();
+  </script>
+</body>
+</html>
